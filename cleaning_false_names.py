@@ -19,8 +19,7 @@ df = pd.DataFrame()
 for x in files1:
     directory = r'R:\JoePriceResearch\record_linking\projects\deep_learning\census\\' + x
     #print(directory)
-    data = pd.read_stata(directory, columns=['gname1900', 'lname1900', 'gname1910', 'lname1910', 'ark1900', 'true'])
-    print(directory)      
+    data = pd.read_stata(directory, columns=['gname1900', 'lname1900', 'gname1910', 'lname1910', 'ark1900', 'true'])     
     data1 = data.rename(index=str, columns={"true": "match", "gname1900":"first1", "lname1900":"last1", "gname1910":"first2", "lname1910":"last2", "ark1900":"fsid"})
                   
     fn = data1[data1.match == 0]
@@ -29,6 +28,9 @@ for x in files1:
     fn['full2'] = fn.first2 + " " +fn.last2
     fn['mid1'] = fn.first1.str.split('\s+').str[1]
     fn['mid2'] = fn.first2.str.split('\s+').str[1]
+    fn['first1'] = fn.first1.str.split('\st').str[0]
+    fn['first2'] = fn.first2.str.split('\st').str[0]
+
     
     fn = fn.replace(np.NaN, '', regex=True)
     
