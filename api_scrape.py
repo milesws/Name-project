@@ -17,20 +17,13 @@ def remove_non_ascii_1(text):
     return ''.join(i for i in text if ord(i)<128)
     
 # Read the data.
-#df0 = pd.read_stata(r'R:\JoePriceResearch\record_linking\projects\deep_learning\pid_1900census.dta')
 df1 = pd.read_stata(r'R:\JoePriceResearch\record_linking\projects\deep_learning\pid_1910census.dta')
-#df2 = pd.read_stata(r'R:\JoePriceResearch\record_linking\projects\deep_learning\pid_1920census.dta')
 
 # Drop any duplicates by either ark or pid.
-#df0 = df0.drop_duplicates(subset='ark1900', keep=False)
-#df0 = df0.drop_duplicates(subset='pid', keep=False)
-
 df1 = df1.drop_duplicates(subset='ark1910', keep=False)
 df1 = df1.drop_duplicates(subset='pid', keep=False)
 
-#df2 = df2.drop_duplicates(subset='ark1920', keep=False)
-#df2 = df2.drop_duplicates(subset='pid', keep=False)
-
+# Define Authenticate to automatically authenticate on the FamilySearch.org website
 def Authenticate():
     '''
     Uses the stored credentials from the Family Search object to
@@ -48,12 +41,10 @@ def Authenticate():
     #with open('Authentication_Key.txt', 'r') as file:
         #key = file.read()
         #make test request here
-    
-
+  
         # Get the webpage.
     driver.get('https://www.familysearch.org')
     #self.driver.find_element_by_css_selector('#global-header > div > div > div.auxilary-links > div > a.sign-in-link.fs-button.fs-button--small.fs-button--minor')
-    
     
     # Fill out the form and click submit.
     '''    
@@ -84,12 +75,14 @@ def Authenticate():
     
 key = Authenticate()
 
+# Make the start time to make sure we authenticate every couple of hours
 start = time.mktime(datetime.datetime.today().timetuple())
     
-# read file get the last id
+# Read file get the last id so we don't duplicate names each time we scrape
 
 ids = ''
 
+# Check last id in file loop until we have an id that we haven't added to .csv file yet
 j = open(r'R:\JoePriceResearch\LIFE-M\Miles Strother\Machine Learning\api_scrape.csv', 'r')
 lines = j.readlines()
 j.close()
@@ -104,16 +97,17 @@ for z, name in enumerate(df1.pid):
     if check == False:
         continue
     
-    #print(z, name)
+    
     ids = ids + name + ','
     
     if z%199 == 0 and z != 0:
-        #print('enough!')
+        
         ids = ids[:-1]
         
-        #ids = 'KWCV-MXB,KWCH-ZSC'
+        
         while True:
             
+            # Pull id from familysearch.org
             pull = requests.get('http://www.familysearch.org/platform/tree/persons?pids=%s' %(ids), 
                                    headers={'Authorization': 'Bearer %s' %(key), 'Accept':'application/json'})
         
@@ -124,8 +118,8 @@ for z, name in enumerate(df1.pid):
         
         text = pull.json()
         
+        #Establish id1 (display name) and id2 (id)
         for x in range(len(text['persons'])):
-            #print(text['persons'][x]['display']['name'], text['persons'][x]['id'])
             
             id1 = remove_non_ascii_1(text['persons'][x]['display']['name'])
             
@@ -151,24 +145,22 @@ for z, name in enumerate(df1.pid):
             if 'sourceDescriptions' in text1.keys():
                     
                 for y in range(len(text1['sourceDescriptions'])):
-                    #print(text1['sourceDescriptions'][y]['titles'][0]['value'])
+                    
                     data.append(remove_non_ascii_1(re.sub(r',',';', text1['sourceDescriptions'][y]['titles'][0]['value'])))
                 
-                #break ###############
                 
-            #break   
             # write to a file on the r drive
             j = open(r'R:\JoePriceResearch\LIFE-M\Miles Strother\Machine Learning\api_scrape.csv', 'a')
             j.write(id2 + ',' + id1 + ',' + ','.join(data) + '\n') ##############
             j.close()
             
+            # Make end time and compare it to time the code was last run to make sure authentication is up to date
             end=time.mktime(datetime.datetime.today().timetuple())
             
             if end-start > 7200:
                 key = Authenticate()
                 start = time.mktime(datetime.datetime.today().timetuple())
-            
-        #break
+        
         
             ids = ''     
             
